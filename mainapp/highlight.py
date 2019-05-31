@@ -2,6 +2,7 @@ from PIL import Image
 import string
 from fpdf import FPDF
 import os
+from . import rgb
 
 def highlight(files, texts_list, keyword_list):
     for i,pages in enumerate(files):
@@ -27,7 +28,7 @@ def highlight(files, texts_list, keyword_list):
                                 for x in range(start_x, end_x):
                                     for y in range(start_y, end_y):
                                         color = invert_img[x,y]
-                                        invert_img[x,y] = (255-color[0],255-color[1],255-color[2])
+                                        invert_img[x,y] = apply_highlight_color(color)
                         before_word = word
                         before_lower_word = lower_word
                     else:
@@ -42,7 +43,7 @@ def highlight(files, texts_list, keyword_list):
                                     for x in range(start_x, end_x):
                                         for y in range(start_y, end_y):
                                             color = invert_img[x,y]
-                                            invert_img[x,y] = (255-color[0],255-color[1],255-color[2]) 
+                                            invert_img[x,y] = apply_highlight_color(color)
                             else:
                                 if lower_word == keyword.split()[1] and before_lower_word == keyword.split()[0]:
                                     #keyword length is 2, and it matches to before word,
@@ -55,7 +56,7 @@ def highlight(files, texts_list, keyword_list):
                                     for x in range(start_x, end_x):
                                         for y in range(start_y, end_y):
                                             color = invert_img[x,y]
-                                            invert_img[x,y] = (255-color[0],255-color[1],255-color[2])
+                                            invert_img[x,y] = apply_highlight_color(color)
                                     #invert current word's color
                                     start_x = word.bounding_poly.vertices[0].x
                                     start_y = word.bounding_poly.vertices[0].y
@@ -64,7 +65,7 @@ def highlight(files, texts_list, keyword_list):
                                     for x in range(start_x, end_x):
                                         for y in range(start_y, end_y):
                                             color = invert_img[x,y]
-                                            invert_img[x,y] = (255-color[0],255-color[1],255-color[2])
+                                            invert_img[x,y] = apply_highlight_color(color)
                     before_word = word
                     before_lower_word = lower_word 
             result_file_name = 'result{}-{}.png'.format(i, j)
@@ -76,3 +77,16 @@ def highlight(files, texts_list, keyword_list):
 
         pdf.output("result-{}.pdf".format(i+1),"F")
 
+
+# mix original color with highlight color (use subtractive mixing)
+def apply_highlight_color(origin_rgb, highlight_rgb=rgb.YELLOW):
+    output_rgb = tuple(
+        map(lambda x: max(0, min(255, int(x))),
+            (
+                255 - ((((255 - origin_rgb[i]) ** 2 + (255 - highlight_rgb[i]) ** 2) / 2) ** 0.5)
+                for i in range(3)
+            )
+        )
+    )
+
+    return output_rgb
