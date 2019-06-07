@@ -1,4 +1,4 @@
-from django.shortcuts import render,reverse
+from django.shortcuts import render, reverse
 from django.http import HttpResponseRedirect
 from django import forms
 from .forms import UploadFileForm
@@ -13,9 +13,14 @@ from mainapp.models import Post
 from mainapp.pdf2jpg import convert
 import asyncio
 from Vcsite import settings
-import glob, os, os.path
+import glob
+import os
+import os.path
+from .forms import FileFieldForm
+from django.views.generic.edit import FormView
 
 import threading
+
 
 @csrf_exempt
 def upload_file(request):
@@ -36,7 +41,7 @@ def upload_file(request):
     post.pdf = request.FILES.get('uploadfile')
     print(request.FILES.get('uploadfile'))
     post.save()
-    #convert('mainapp/input',200)
+    # convert('mainapp/input',200)
     '''
     uploadfilemodel = UploadFileModel()
     uploadfilemodel.title = request.POST.get('uploadfile', None)
@@ -44,11 +49,13 @@ def upload_file(request):
     uploadfilemodel.save()'''
     return render(request, 'mainapp/index.html')
 
-def convert_thread(path,dpi):
-    convert(path,dpi)
-    filelist = glob.glob(os.path.join(path,"*"))
+
+def convert_thread(path, dpi):
+    convert(path, dpi)
+    filelist = glob.glob(os.path.join(path, "*"))
     for f in filelist:
         os.remove(f)
+
 
 @csrf_exempt
 def upload_final(request):
@@ -60,12 +67,13 @@ def upload_final(request):
     else:
         '''form = UploadFileForm()'''
     thread = threading.Thread(target=convert_thread,
-                                args=(
-                                    'mainapp/input',
-                                    200,
-                                    ))
+                              args=(
+                                  'mainapp/input',
+                                  200,
+                              ))
     thread.start()
     return render(request, 'mainapp/index.html')
+
 
 def index(request):
     template = loader.get_template('mainapp/index.html')
@@ -73,3 +81,20 @@ def index(request):
         'latest_question_list': "test",
     }
     return HttpResponse(template.render(context, request))
+
+
+class FileFieldView(FormView):
+    form_class = FileFieldForm
+    template_name = 'upload.html'  # Replace with your template.
+    success_url = '…'  # Replace with your URL or reverse().
+
+    def post(self, request, *args, **kwargs):
+        form_class = self.get_form_class()
+        form = self.get_form(form_class)
+        files = request.FILES.getlist('file_field')
+        if form.is_valid():
+            for f in files:
+                …  # Do something with each file.
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)

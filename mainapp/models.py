@@ -12,7 +12,7 @@ from django.conf import settings
 class Post(models.Model):
 	profile_pic = models.ImageField(upload_to="")
 	photo = models.ImageField(blank=True, upload_to="")
-pdf = models.FileField(blank=True, upload_to="")
+    files = models.FileField(blank=True, upload_to="")
 
 
 class UploadFileModel(models.Model):
